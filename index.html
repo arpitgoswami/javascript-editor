@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript Live Editor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/comment/comment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/selection/active-line.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/fold/foldcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/fold/foldgutter.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/fold/brace-fold.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/javascript-hint.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/fold/foldgutter.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.css">
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --accent-color: #58a6ff;
+            --accent-hover: #1f6feb;
+            --text-primary: #f0f6fc;
+            --text-secondary: #c9d1d9;
+            --text-tertiary: #8b949e;
+            --border-color: #30363d;
+            --error-color: #f85149;
+            --success-color: #56d364;
+            --warning-color: #e3b341;
+            --editor-bg: #0d1117;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        .CodeMirror {
+            height: calc(100vh - 130px);
+            font-size: 15px;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Menlo', monospace;
+            border-radius: 8px;
+            padding: 8px 0;
+            border: 1px solid var(--border-color);
+            background-color: var(--editor-bg);
+        }
+
+        .CodeMirror-gutters {
+            background-color: var(--editor-bg);
+            border-right: 1px solid var(--border-color);
+        }
+
+        .CodeMirror-linenumber {
+            color: var(--text-tertiary);
+        }
+
+        .container {
+            max-width: 100%;
+            padding: 1rem;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        .app-title {
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            font-size: 1.25rem;
+            color: var(--text-primary);
+        }
+
+        .app-title svg {
+            margin-right: 0.75rem;
+        }
+
+        .editor-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            height: calc(100vh - 100px);
+            flex-grow: 1;
+        }
+
+        .editor-panel {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .output-panel {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .output-container {
+            background-color: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: 8px;
+            color: var(--text-primary);
+            overflow-y: auto;
+            font-family: 'Menlo', 'Monaco', 'Consolas', monospace;
+            border: 1px solid var(--border-color);
+            position: relative;
+            flex-grow: 1;
+            height: calc(100vh - 130px);
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--bg-secondary);
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            font-size: 0.75rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-message {
+            margin-right: 1rem;
+            font-weight: 500;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            color: var(--text-tertiary);
+            font-size: 0.875rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .panel-title {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+
+        .panel-title svg {
+            margin-right: 0.5rem;
+        }
+
+        .output-time {
+            font-size: 0.75rem;
+        }
+
+        .output-content {
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+
+        .console-line {
+            display: flex;
+            margin-bottom: 4px;
+            padding: 2px 0;
+        }
+
+        .console-icon {
+            margin-right: 8px;
+            font-weight: bold;
+        }
+
+        .error-line {
+            color: var(--error-color);
+        }
+
+        .warning-line {
+            color: var(--warning-color);
+        }
+
+        .log-line {
+            color: var(--text-secondary);
+        }
+
+        .result-line {
+            color: var(--accent-color);
+        }
+
+        .success {
+            color: var(--success-color);
+        }
+
+        .error {
+            color: var(--error-color);
+        }
+
+        .neutral {
+            color: var(--warning-color);
+        }
+
+        .btn {
+            background-color: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            padding: 0.375rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+        }
+
+        .btn svg {
+            margin-right: 0.5rem;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+            color: var(--text-primary);
+            border-color: var(--accent-hover);
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: var(--text-primary);
+            border-color: var(--accent-color);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .clear-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.75rem;
+            background: none;
+            border: none;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .clear-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .clear-btn svg {
+            margin-right: 0.25rem;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 120px;
+            background-color: var(--bg-tertiary);
+            color: var(--text-secondary);
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.75rem;
+            pointer-events: none;
+            border: 1px solid var(--border-color);
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .output-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .output-container::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        .output-container::-webkit-scrollbar-thumb {
+            background-color: var(--border-color);
+            border-radius: 6px;
+            border: 2px solid var(--bg-secondary);
+        }
+
+        /* Code hint popup */
+        .CodeMirror-hints {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .CodeMirror-hint {
+            color: var(--text-secondary);
+        }
+
+        li.CodeMirror-hint-active {
+            background-color: var(--accent-color);
+            color: var(--text-primary);
+        }
+
+        /* Media query for smaller screens */
+        @media (max-width: 768px) {
+            .editor-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 1fr;
+            }
+            
+            .CodeMirror {
+                height: calc(50vh - 80px);
+            }
+            
+            .output-container {
+                height: calc(50vh - 80px);
+            }
+        }
+
+        /* Media query for larger screens */
+        @media (min-width: 1400px) {
+            .editor-container {
+                grid-template-columns: 3fr 2fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="app-header">
+            <div class="app-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 16v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2"></path>
+                    <polyline points="14 2 20 2 20 8"></polyline>
+                    <line x1="10" y1="14" x2="20" y2="4"></line>
+                </svg>
+                JavaScript Live Editor
+            </div>
+            <div class="btn-group">
+                <div id="statusIndicator" class="status-indicator">
+                    <div id="statusDot" class="status-dot" style="background-color: var(--warning-color);"></div>
+                    <div id="statusMessage" class="status-message">Ready</div>
+                </div>
+                <button id="resetBtn" class="btn tooltip">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                        <path d="M3 3v5h5"></path>
+                    </svg>
+                    Reset
+                    <span class="tooltiptext">Reset to default code</span>
+                </button>
+                <button id="shareBtn" class="btn btn-primary tooltip">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                        <polyline points="16 6 12 2 8 6"></polyline>
+                        <line x1="12" y1="2" x2="12" y2="15"></line>
+                    </svg>
+                    Share
+                    <span class="tooltiptext">Share your code</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="editor-container">
+            <div class="editor-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                        </svg>
+                        JavaScript Editor
+                    </div>
+                    <div id="executionTime" class="output-time"></div>
+                </div>
+                <div id="editor"></div>
+            </div>
+            <div class="output-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="16 18 22 12 16 6"></polyline>
+                            <polyline points="8 6 2 12 8 18"></polyline>
+                        </svg>
+                        Console Output
+                    </div>
+                    <div id="lastExecuted" class="output-time">Not executed yet</div>
+                </div>
+                <div id="output" class="output-container">
+                    <button id="clearOutput" class="clear-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="9" y1="9" x2="15" y2="15"></line>
+                            <line x1="15" y1="9" x2="9" y2="15"></line>
+                        </svg>
+                        Clear
+                    </button>
+                    <div class="output-content">
+                        <div class="console-line log-line">
+                            <span class="console-icon">›</span>
+                            <span>// Your code output will appear here</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const defaultCode = `// Welcome to the JavaScript Live Editor
+// Your code runs automatically as you type
+
+// Basic example
+console.log("Hello, World!");
+
+// Working with variables
+const name = "JavaScript";
+const year = 1995;
+console.log(\`\${name} was created in \${year}\`);
+
+// A simple function
+function calculateSum(a, b) {
+  return a + b;
+}
+
+// Using the function
+const result = calculateSum(5, 7);
+console.log("Sum result:", result);
+
+// Working with arrays
+const fruits = ["apple", "banana", "orange"];
+fruits.forEach(fruit => {
+  console.log(\`I like \${fruit}s\`);
+});
+
+// Try editing this code and see the output change!`;
+
+            // Initialize CodeMirror
+            const editor = CodeMirror(document.getElementById('editor'), {
+                value: defaultCode,
+                mode: "javascript",
+                theme: "monokai",
+                lineNumbers: true,
+                lineWrapping: true,
+                matchBrackets: true,
+                autoCloseBrackets: true,
+                indentUnit: 2,
+                tabSize: 2,
+                styleActiveLine: true,
+                foldGutter: true,
+                gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+                extraKeys: {
+                    "Ctrl-Space": "autocomplete",
+                    "Ctrl-/": "toggleComment",
+                    "Cmd-/": "toggleComment",
+                    "Tab": function(cm) {
+                        if (cm.somethingSelected()) {
+                            cm.indentSelection("add");
+                        } else {
+                            cm.replaceSelection("  ", "end");
+                        }
+                    }
+                }
+            });
+
+            const outputElement = document.getElementById('output').querySelector('.output-content');
+            const statusDot = document.getElementById('statusDot');
+            const statusMessage = document.getElementById('statusMessage');
+            const lastExecuted = document.getElementById('lastExecuted');
+            const executionTime = document.getElementById('executionTime');
+            const resetBtn = document.getElementById('resetBtn');
+            const shareBtn = document.getElementById('shareBtn');
+            const clearOutputBtn = document.getElementById('clearOutput');
+
+            let executeTimeout;
+            let lastCode = '';
+            let consoleHistory = [];
+
+            // Override console methods to capture output
+            const originalConsole = {
+                log: console.log,
+                error: console.error,
+                warn: console.warn,
+                info: console.info
+            };
+
+            // Create a proxy console object
+            function createConsoleProxy() {
+                const consoleOutput = [];
+                
+                return {
+                    log: function(...args) {
+                        originalConsole.log(...args);
+                        consoleOutput.push({ type: 'log', args });
+                    },
+                    error: function(...args) {
+                        originalConsole.error(...args);
+                        consoleOutput.push({ type: 'error', args });
+                    },
+                    warn: function(...args) {
+                        originalConsole.warn(...args);
+                        consoleOutput.push({ type: 'warning', args });
+                    },
+                    info: function(...args) {
+                        originalConsole.info(...args);
+                        consoleOutput.push({ type: 'info', args });
+                    },
+                    getOutput: function() {
+                        return consoleOutput;
+                    },
+                    clear: function() {
+                        consoleOutput.length = 0;
+                    }
+                };
+            }
+
+            // Format value for display in console
+            function formatValue(value) {
+                if (value === undefined) return 'undefined';
+                if (value === null) return 'null';
+                
+                if (typeof value === 'object') {
+                    try {
+                        return JSON.stringify(value);
+                    } catch (e) {
+                        return value.toString();
+                    }
+                }
+                
+                if (typeof value === 'string') {
+                    return `"${value}"`;
+                }
+                
+                return String(value);
+            }
+
+            // Format console arguments
+            function formatConsoleArgs(args) {
+                if (args.length === 0) return '';
+                
+                // Check if first arg is a format string
+                let firstArg = args[0];
+                if (typeof firstArg === 'string' && firstArg.includes('%')) {
+                    // Very basic printf-style formatting
+                    let formatted = firstArg;
+                    let argIndex = 1;
+                    
+                    // Replace %s, %d, %i, %f, %o, %O, %j
+                    formatted = formatted.replace(/%[sdifoOj]/g, function(match) {
+                        if (argIndex >= args.length) return match;
+                        const value = args[argIndex++];
+                        
+                        switch (match) {
+                            case '%s': return String(value);
+                            case '%d':
+                            case '%i': return parseInt(value);
+                            case '%f': return parseFloat(value);
+                            case '%o':
+                            case '%O':
+                            case '%j': return JSON.stringify(value);
+                            default: return match;
+                        }
+                    });
+                    
+                    // Append remaining args
+                    const remainingArgs = args.slice(argIndex);
+                    if (remainingArgs.length > 0) {
+                        formatted += ' ' + remainingArgs.map(formatValue).join(' ');
+                    }
+                    
+                    return formatted;
+                }
+                
+                // Otherwise just join args with space
+                return args.map(formatValue).join(' ');
+            }
+
+            // Update the console output display
+            function updateConsoleOutput(consoleOutput) {
+                let html = '';
+                
+                consoleOutput.forEach(item => {
+                    const formattedOutput = formatConsoleArgs(item.args);
+                    const className = `console-line ${item.type}-line`;
+                    let icon = '›';
+                    
+                    switch (item.type) {
+                        case 'error': icon = '✖'; break;
+                        case 'warning': icon = '⚠'; break;
+                        case 'info': icon = 'ℹ'; break;
+                        case 'result': icon = '←'; break;
+                        default: icon = '›';
+                    }
+                    
+                    html += `<div class="${className}"><span class="console-icon">${icon}</span><span>${formattedOutput}</span></div>`;
+                });
+                
+                if (html === '') {
+                    html = `<div class="console-line log-line"><span class="console-icon">›</span><span>// Code executed successfully with no output</span></div>`;
+                }
+                
+                outputElement.innerHTML = html;
+                outputElement.parentElement.scrollTop = outputElement.parentElement.scrollHeight;
+            }
+
+            // Execute the JavaScript code
+            function executeCode(code) {
+                // Update status
+                statusDot.style.backgroundColor = 'var(--warning-color)';
+                statusMessage.textContent = 'Executing...';
+                statusMessage.className = 'status-message neutral';
+                
+                const startTime = performance.now();
+                
+                const consoleProxy = createConsoleProxy();
+                const originalConsoleLog = console.log;
+                const originalConsoleError = console.error;
+                const originalConsoleWarn = console.warn;
+                const originalConsoleInfo = console.info;
+                
+                // Override console methods
+                console.log = consoleProxy.log;
+                console.error = consoleProxy.error;
+                console.warn = consoleProxy.warn;
+                console.info = consoleProxy.info;
+                
+                try {
+                    // Execute the code
+                    const result = new Function(code)();
+                    
+                    // If there's a returned value and it's not undefined, show it
+                    if (result !== undefined) {
+                        consoleProxy.log(result);
+                    }
+                    
+                    // Update status
+                    statusDot.style.backgroundColor = 'var(--success-color)';
+                    statusMessage.textContent = 'Success';
+                    statusMessage.className = 'status-message success';
+                } catch (error) {
+                    // Log the error
+                    consoleProxy.error(error.toString());
+                    
+                    // Update status
+                    statusDot.style.backgroundColor = 'var(--error-color)';
+                    statusMessage.textContent = 'Error';
+                    statusMessage.className = 'status-message error';
+                } finally {
+                    // Restore original console methods
+                    console.log = originalConsoleLog;
+                    console.error = originalConsoleError;
+                    console.warn = originalConsoleWarn;
+                    console.info = originalConsoleInfo;
+                    
+                    // Get console output
+                    const output = consoleProxy.getOutput();
+                    
+                    // Update console display
+                    updateConsoleOutput(output);
+                    
+                    // Update execution time
+                    const endTime = performance.now();
+                    const timeElapsed = Math.round(endTime - startTime);
+                    executionTime.textContent = `Execution time: ${timeElapsed}ms`;
+                    
+                    // Update last executed time
+                    const now = new Date();
+                    lastExecuted.textContent = `Last executed at ${now.toLocaleTimeString()}`;
+                }
+            }
+
+            // Execute code after it hasn't changed for a second
+            editor.on('change', function() {
+                clearTimeout(executeTimeout);
+                const code = editor.getValue();
+                
+                if (code !== lastCode) {
+                    executeTimeout = setTimeout(() => {
+                        lastCode = code;
+                        executeCode(code);
+                    }, 800);
+                }
+            });
+
+            // Reset button handler
+            resetBtn.addEventListener('click', function() {
+                editor.setValue(defaultCode);
+            });
+
+            // Share button handler (mock)
+            shareBtn.addEventListener('click', function() {
+                const code = editor.getValue();
+                const encodedCode = encodeURIComponent(code);
+                const dummyUrl = `https://jseditor.example.com/share/${btoa(encodedCode).substring(0, 10)}`;
+                
+                // Create a mock modal or alert
+                alert(`Share this code with others:\n${dummyUrl}\n\n(This is a mock interface)`);
+            });
+
+            // Clear output button handler
+            clearOutputBtn.addEventListener('click', function() {
+                outputElement.innerHTML = `<div class="console-line log-line"><span class="console-icon">›</span><span>// Console cleared</span></div>`;
+            });
+
+            // Initial execution
+            executeCode(defaultCode);
+        });
+    </script>
+</body>
+</html>
